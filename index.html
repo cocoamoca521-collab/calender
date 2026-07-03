@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#c4a0a5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="#c4a0a5">
+  <link rel="manifest" href="manifest.json">
+  <title>my calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <button class="settings-btn" id="settingsBtn" aria-label="設定">⚙</button>
+    <div class="noa-letter" id="noaLetter" style="display:none;">
+      <div class="noa-letter-inner">
+        <span class="noa-avatar">🐺</span>
+        <p class="noa-text" id="noaText"></p>
+      </div>
+      <button class="noa-close" id="noaClose" aria-label="閉じる">×</button>
+    </div>
+
+    <header class="header">
+      <button class="nav-btn" id="prevMonth" aria-label="前の月">‹</button>
+      <h1 class="month-title" id="monthTitle"></h1>
+      <button class="nav-btn" id="nextMonth" aria-label="次の月">›</button>
+    </header>
+
+    <div class="weekday-row">
+      <span class="weekday sun">Sun</span>
+      <span class="weekday">Mon</span>
+      <span class="weekday">Tue</span>
+      <span class="weekday">Wed</span>
+      <span class="weekday">Thu</span>
+      <span class="weekday">Fri</span>
+      <span class="weekday sat">Sat</span>
+    </div>
+
+    <div class="calendar-grid" id="calendarGrid"></div>
+
+    <div class="event-section" id="eventSection">
+      <h2 class="event-date" id="eventDate"></h2>
+      <ul class="event-list" id="eventList"></ul>
+      <button class="add-btn" id="addEventBtn">＋ 予定を追加</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h3 class="modal-title" id="modalTitle">予定を追加</h3>
+      <input type="text" class="modal-input" id="eventInput" placeholder="予定を入力..." maxlength="50">
+      <input type="time" class="modal-input" id="eventTime">
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="modalCancel">キャンセル</button>
+        <button class="modal-btn confirm" id="modalConfirm">保存</button>
+      </div>
+      <button class="modal-btn delete" id="modalDelete" style="display:none;">この予定を削除</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="settingsOverlay">
+    <div class="modal">
+      <h3 class="modal-title">設定</h3>
+      <label class="settings-label" for="apiKeyInput">Anthropic API Key</label>
+      <input type="password" class="modal-input" id="apiKeyInput" placeholder="sk-ant-...">
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="settingsCancel">キャンセル</button>
+        <button class="modal-btn confirm" id="settingsSave">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script src="noa-letter.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+  </script>
+</body>
+</html>
