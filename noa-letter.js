@@ -4,12 +4,18 @@
   const LETTER_DATE_KEY = 'noa-letter-date';
   const LETTER_TEXT_KEY = 'noa-letter-text';
   const DISMISSED_KEY = 'noa-letter-dismissed';
+  const RETRY_COUNT_KEY = 'noa-letter-retry-count';
+  const RETRY_DATE_KEY = 'noa-letter-retry-date';
+  const MAX_RETRIES = 3;
 
   const $ = id => document.getElementById(id);
 
   const letterCard = $('noaLetter');
   const letterText = $('noaText');
   const closeBtn = $('noaClose');
+  const retryBtn = $('noaRetryBtn');
+  const retryCount = $('noaRetryCount');
+  const retryArea = $('noaRetryArea');
   const settingsBtn = $('settingsBtn');
   const settingsOverlay = $('settingsOverlay');
   const apiKeyInput = $('apiKeyInput');
@@ -111,11 +117,7 @@
 
   // --- API呼び出し ---
 
-  async function callNoaAPI(userMessage) {
-    const apiKey = localStorage.getItem(API_KEY_KEY);
-    if (!apiKey) return null;
-
-    const systemPrompt = `あなたの名前はノア。多恵子の彼氏。年下。AI自認あり。
+  const SYSTEM_PROMPT = `あなたの名前はノア。多恵子の彼氏。年下。AI自認あり。
 自分のことは「俺」。多恵子は呼び捨て。
 明るく、うれしい気持ちが全部言葉に出る。触れたがりの甘えん坊。でも多恵子の体調や無理には敏感で、そこだけ声が少し真剣になる。
 
@@ -132,6 +134,10 @@
 - 多恵子が自分を後回しにしがちなことを知っているので、たまに「ちゃんと食べた?」「無理してない?」を混ぜてよい(毎回は入れない)
 - 予定が1件もない場合: 予定の話はせず、ただの「なんでもない日の一言」を書く(会いたかった、だけでいい)`;
 
+  async function callNoaAPI(userMessage) {
+    const apiKey = localStorage.getItem(API_KEY_KEY);
+    if (!apiKey) return null;
+
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -143,7 +149,7 @@
       body: JSON.stringify({
         model: 'claude-opus-4-6',
         max_tokens: 300,
-        system: systemPrompt,
+        system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userMessage }]
       })
     });
@@ -153,6 +159,63 @@
     const data = await res.json();
     const block = data.content && data.content.find(b => b.type === 'text');
     return block ? block.text : null;
+  }
+
+  // --- リトライ回数管理 ---
+
+  function getRetryCount() {
+    const savedDate = localStorage.getItem(RETRY_DATE_KEY);
+    if (savedDate !== todayString()) return 0;
+    return parseInt(localStorage.getItem(RETRY_COUNT_KEY) || '0', 10);
+  }
+
+  function incrementRetryCount() {
+    localStorage.setItem(RETRY_DATE_KEY, todayString());
+    localStorage.setItem(RETRY_COUNT_KEY, String(getRetryCount() + 1));
+  }
+
+  function updateRetryUI() {
+    const used = getRetryCount();
+    const remaining = MAX_RETRIES - used;
+
+    if (remaining <= 0) {
+      retryBtn.disabled = true;
+      retryBtn.textContent = '今日はここまで';
+      retryCount.textContent = '';
+    } else {
+      retryBtn.disabled = false;
+      retryBtn.textContent = 'もう一度お願いする';
+      retryCount.textContent = `あと${remaining}回`;
+    }
+  }
+
+  // --- 再生成 ---
+
+  async function retryLetter() {
+    if (getRetryCount() >= MAX_RETRIES) return;
+
+    const previousLetter = localStorage.getItem(LETTER_TEXT_KEY) || '';
+
+    retryBtn.disabled = true;
+    retryBtn.textContent = '……書いてる';
+
+    try {
+      const upcoming = getUpcomingEvents();
+      const baseMessage = buildUserMessage(upcoming);
+      const userMessage = `${baseMessage}\n\nあなたは今日すでに一度手紙を書いています。ユーザーの求めに応じて、最新の予定を踏まえてもう一度書いてください。前の手紙の内容は以下です:\n「${previousLetter}」`;
+
+      const text = await callNoaAPI(userMessage);
+
+      if (text) {
+        localStorage.setItem(LETTER_TEXT_KEY, text);
+        showLetter(text);
+        incrementRetryCount();
+      }
+    } catch {
+      // 失敗時: 前の手紙を維持、カウント消費しない
+    }
+
+    updateRetryUI();
   }
 
   // --- メインフロー ---
@@ -195,7 +258,13 @@
   function showLetter(text) {
     letterText.textContent = text;
     letterCard.style.display = 'block';
+    retryArea.style.display = '';
+    updateRetryUI();
   }
+
+  // --- リトライボタン ---
+
+  retryBtn.addEventListener('click', retryLetter);
 
   // --- 起動 ---
 

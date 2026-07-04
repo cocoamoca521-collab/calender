@@ -368,6 +368,45 @@ body {
   white-space: pre-wrap;
 }
 
+.noa-retry-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-left: 46px;
+}
+
+.noa-retry-btn {
+  border: none;
+  background: transparent;
+  color: var(--rose-400);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-decoration-color: rgba(196, 160, 165, 0.4);
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.noa-retry-btn:active {
+  color: var(--rose-600);
+}
+
+.noa-retry-btn:disabled {
+  color: var(--rose-muted);
+  cursor: default;
+  text-decoration: none;
+  opacity: 0.6;
+}
+
+.noa-retry-count {
+  font-size: 0.7rem;
+  color: var(--rose-muted);
+}
+
 .noa-close {
   position: absolute;
   top: 8px;
